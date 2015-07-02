@@ -1,11 +1,12 @@
 <!DOCTYPE HTML>
 <html>
     <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
         <script src="js/jquery-1.11.0.min.js"></script>
         <script src="js/jquery-ui-1.10.4.custom.min.js"></script>
         <script src="js/ColorWheel.js"></script>
-        <link rel='stylesheet' href='//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css'>
-        <link rel='stylesheet' href='jquery-ui-1.10.4.custom.css'>
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+        <link rel="stylesheet" href="jquery-ui-1.10.4.custom.css">
         <link rel="stylesheet" type="text/css" href="soundscene.css"/>
         <script type="text/javascript" src="scripts/soundsketch.js"></script>
     </head>
@@ -15,13 +16,13 @@
             <div id="welcome-container">
                 <canvas id="backgroundcanvas"></canvas>
                 <span id="header">SOUND SKETCH</span> 
-                <img id="colorwheel" src="images/colorwheelsmall.png"></img>    
+                <img id="colorwheel" class="hidden" src="images/colorwheelsmall.png"></img>
                 <div id="dragDiv" class="row" ondragover="allowDrop(event)" ondrop="drop(event)">
-                    <input id="filepicker" type="file" accept=".mp3"/>
+                    <input id="filepicker" class="hidden" type="file" accept=".mp3"/>
                     <img id="preloadimage" src="images/preload.png"></img>
                     <span id="OR">OR</span>
                     <img id="uploadimage" src="images/upload.png"></img>
-                    <input type="text" id="urlInput"/>
+                    <input type="text" class="hidden" id="urlInput"/>
                 </div>
             </div>
 
