@@ -41,12 +41,19 @@ ColorWheel.prototype = function() {
     };
 
    /**
+    * Calculate a point in the color wheel's coordinates relative to it's center
+    */
+    var relToCenter = function(x, y) {
+        return {x: (x - offsetY), y: (y - offsetY)};
+    };
+
+   /**
     * Draw the background of the color wheel
     */
     var drawBackground = function() {
         wheelctxt.clearRect(0, 0, width, width); 
         wheelctxt.fillStyle = '#FFFFFF';
-        wheelctxt.arc(startX  + width/2, startY  + width/2, 5 + width/2, 0, Math.PI * 2);
+        wheelctxt.arc(startX + width/2, startY + width/2, 5 + width/2, 0, Math.PI * 2);
         wheelctxt.fill();
         wheelctxt.drawImage(colorwheel,startX, startY, width, width);        
     };
@@ -63,23 +70,23 @@ ColorWheel.prototype = function() {
         var px = marker.x;
         var py = marker.y;
 
+        var prel = relToCenter(px, py);
+
         // draw the marker background
         wheelctxt.fillStyle = 'rgba(255, 255, 255, 0.5)';
         wheelctxt.beginPath();
 
-        var offsetx = startX + width/2; 
-        var offsety = startY + width/2;
-        var r = getLength((px - offsetx), (py - offsety));
-        var angle = Math.atan2(py - offsety, px - offsetx);
+        var r = getLength(prel.x, prel.y);
+        var angle = Math.atan2(prel.y, prel.x);
         var thet = (markerRad + 1)/r;
 
-        var leftx = offsetx + r * Math.cos(angle - thet);
-        var lefty = offsety + r * Math.sin(angle - thet);
+        var leftx = offsetX + r * Math.cos(angle - thet);
+        var lefty = offsetY + r * Math.sin(angle - thet);
 
-        var rightx = offsetx + r * Math.cos(angle + thet);
-        var righty = offsety + r * Math.sin(angle + thet);
+        var rightx = offsetX + r * Math.cos(angle + thet);
+        var righty = offsetY + r * Math.sin(angle + thet);
             
-        wheelctxt.moveTo(offsetx, offsety);
+        wheelctxt.moveTo(offsetX, offsetY);
         wheelctxt.lineTo(leftx, lefty);
         wheelctxt.lineTo(rightx, righty);
         wheelctxt.closePath();
@@ -135,27 +142,41 @@ ColorWheel.prototype = function() {
     * a new marker position and update the given marker
     */
     var updateMarkerPosition = function(mouseX, mouseY, marker) {
-        var offsetx = startX + width/2;
-        var offsety = startY + width/2;
- 
         var radius = width/2 - markerRad;
 
-        // calculate (ax, ay) relative to the color wheel's center 
-        var ax = mouseX - offsetx;
-        var ay = mouseY - offsety;
+        // calculate position relative to the color wheel's center 
+        var posRel = relToCenter(mouseX, mouseY);
  
-        var currRadius = getLength(ax, ay);
-        var boundscheck = Math.pow(ax, 2) + Math.pow(ay,2);
+        var currRadius = getLength(posRel.x, posRel.y);
+        var boundscheck = Math.pow(posRel.x, 2) + Math.pow(posRel.y, 2);
  
         // make sure the marker position stays within the color wheel bounds
         if (boundscheck < Math.pow(width/2 - markerRad, 2)) {
             marker.x = mouseX;
             marker.y = mouseY;
         } else {
-            marker.x = offsetx + radius * ax/currRadius;
-            marker.y = offsety + radius * ay/currRadius; 
+            marker.x = offsetX + radius * posRel.x/currRadius;
+            marker.y = offsetY + radius * posRel.y/currRadius; 
         }
     };
+
+   /**
+    * Calculate marker position for when a non-center marker is moved 
+    */
+    var moveComplementMarker = function(oldx, oldy, marker, complement) {
+        var angleDelta = Math.atan2(oldy - offsetY, oldx - offsetX) -
+                         Math.atan2(marker.y - offsetY, marker.x - offsetX); 
+ 
+        var cx = complement.x - offsetX;
+        var cy = complement.y - offsetY;
+        var r = getLength(cx, cy);
+ 
+        var angle = Math.atan2(cy, cx);
+        angle += angleDelta;    
+ 
+        complement.x = offsetX + r * Math.cos(angle);
+        complement.y = offsetY + r * Math.sin(angle);
+    }
 
    /**
     * Add mouse listeners to the color wheel
@@ -180,16 +201,12 @@ ColorWheel.prototype = function() {
                 var oldx = marker.x;
                 var oldy = marker.y;
 
-                var offsetx = startX + width/2;
-                var offsety = startY + width/2;
-
-
                 var x = ev.pageX - $(this).offset().left;
                 var y = ev.pageY - $(this).offset().top;
                 updateMarkerPosition(x, y, marker);
  
-                var ax = x - offsetx;
-                var ay = y - offsety;
+                var ax = x - offsetX;
+                var ay = y - offsetY;
                 var currRadius = getLength(ax, ay);
                 switch(selectedmark) {
                     case -1:
@@ -198,34 +215,22 @@ ColorWheel.prototype = function() {
                     // complementary color
                     case 0:
                         var complement = markers[2];
- 
-                        var da = Math.atan2(oldy - offsety, oldx - offsetx) -
-                             Math.atan2(marker.y - offsety, marker.x - offsetx); 
- 
-                        var cx = complement.x - offsetx;
-                        var cy = complement.y - offsety;
-                        var r = getLength(cx, cy);
- 
-                        var angle = Math.atan2(cy, cx);
-                        angle += da;    
- 
-                        complement.x = offsetx + r * Math.cos(angle);
-                        complement.y = offsety + r * Math.sin(angle);
+                        moveComplementMarker(oldx, oldy, marker, complement);
                         break;
                 
                     // base color
                     case 1:
-                        var oldR = getLength(oldx - (startX + width/2), oldy-(startY + width/2));
+                        var oldR = getLength(oldx - offsetX, oldy - offsetY);
                         var dr = Math.min(width/2, currRadius) - oldR;  
  
-                        var da = Math.atan2(oldy - offsety, oldx - offsetx) -
-                             Math.atan2(marker.y - offsety, marker.x - offsetx); 
+                        var da = Math.atan2(oldy - offsetY, oldx - offsetX) -
+                             Math.atan2(marker.y - offsetY, marker.x - offsetX); 
  
                         var c1 = markers[0];
                         var c2 = markers[2];
  
-                        var c1x = c1.x - (startX + width/2);
-                        var c1y = c1.y - (startY + width/2);
+                        var c1x = c1.x - offsetX;
+                        var c1y = c1.y - offsetY;
                         var ang1 = Math.atan2(c1y, c1x);
                         ang1 -= da;
  
@@ -245,29 +250,17 @@ ColorWheel.prototype = function() {
                             r2 += dr;
                         }
  
-                        c1.x = offsetx + r1 * Math.cos(ang1);
-                        c1.y = offsety + r1 * Math.sin(ang1);
+                        c1.x = offsetX + r1 * Math.cos(ang1);
+                        c1.y = offsetY + r1 * Math.sin(ang1);
  
-                        c2.x = offsetx + r2 * Math.cos(ang2);
-                        c2.y = offsety + r2 * Math.sin(ang2);
+                        c2.x = offsetX + r2 * Math.cos(ang2);
+                        c2.y = offsetY + r2 * Math.sin(ang2);
                         break;
                     
-                    /* complementary color */
+                    // complementary color
                     case 2:
                         var complement = markers[0];
- 
-                        var da = Math.atan2(oldy - offsety, oldx - offsetx) -
-                             Math.atan2(marker.y - offsety, marker.x - offsetx); 
- 
-                        var cx = complement.x - offsetx;
-                        var cy = complement.y - offsety;
-                        var r = getLength(cx, cy);
- 
-                        var angle = Math.atan2(cy, cx);
-                        angle += da;    
- 
-                        complement.x = offsetx + r * Math.cos(angle);
-                        complement.y = offsety + r * Math.sin(angle);
+                        moveComplementMarker(oldx, oldy, marker, complement);
                         break;  
                     default:
                         break;
@@ -283,7 +276,9 @@ ColorWheel.prototype = function() {
     */
     var init = function() {
         markerRad = this.rad/15;
-        width = this.rad;
+        width = this.rad,
+        offsetX = startX + width/2,
+        offsetY = startY + width/2;
 
         var startangle = (Math.random() * Math.PI);
         for (var i = 0; i < 3; i++) {
@@ -318,11 +313,9 @@ ColorWheel.prototype = function() {
     * Return the radius of the color wheel 
     */
     var getRadius = function() {
-        var offsetx = startX + width/2; 
-        var offsety = startY + width/2;
         var px = markers[1].x;
         var py = markers[1].y;
-        var r = getLength(px - offsetx, py - offsety);
+        var r = getLength(px - offsetX, py - offsetY);
         return r;
     };
 
