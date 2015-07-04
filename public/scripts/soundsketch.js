@@ -1,11 +1,19 @@
 $(document).ready(function() {
 
     var soundSketch = function () {
-        DrawMode = {
+        var DrawMode = {
             PEN:0,
             FILTER:1,
             NONE:2
         };
+
+        var SAMPLE_MAX = 256;
+        var WIDTH = window.innerWidth;
+        var HEIGHT = window.innerHeight * 0.95;
+        var BACKGROUND_CANVAS_WIDTH = 800;
+        var BACKGROUND_CANVAS_HEIGHT = 600;
+        var RADIUS_MAX = 50;
+        var RADIUS_MIN = 10;
 
         var audioContext;
         var audioSource;
@@ -14,18 +22,13 @@ $(document).ready(function() {
 
         var paused = false;
         var pausetime;
-        var freqDomain;
-        var timeDomain;
         var $canvas;
         var ctxt;
-        var SAMPLE_MAX = 256;
-        var WIDTH = window.innerWidth;
-        var HEIGHT = window.innerHeight * 0.95;
-        var BACKGROUND_CANVAS_WIDTH = 800;
-        var BACKGROUND_CANVAS_HEIGHT = 600;
+
+
         var lastAmps;
         var frame = 0;
-        var drawmode = 2;
+        var drawmode = DrawMode.NONE;
         var interp = 0;
         var filterShapes = []; 
         var filters = [];
@@ -34,20 +37,18 @@ $(document).ready(function() {
 
         var convolvers = [];
         var currconvolve = -1;
-        var convolver = null;
-
 
         var mousedownx;
         var mousedowny;
         var clicktime;
-        var mousedownID = -1;
+        var mousedownTimer = -1;
         
         var sceneDisplayed = false;            
         var drawing = false;
         var drawingFilter = false;
         var noiseLines = [];    
 
-        var cwheel;
+        var colorwheel;
 
         /* number between 0.1 and 2 proportional to the change in playback speed */
         var spacing = 1;
@@ -86,14 +87,13 @@ $(document).ready(function() {
             request.send();
         }
 
-
        /**
         * Draw a circle on the html canvas
         */
-        function drawCircle(context, x, y, r, fill) {
+        function drawCircle(context, circle, fill) {
             context.beginPath();
             context.fillStyle = fill; 
-            context.arc(x, y, r, 0, Math.PI * 2);
+            context.arc(circle.x, circle.y, circle.r, 0, Math.PI * 2);
             context.fill();
         }
 
@@ -101,8 +101,8 @@ $(document).ready(function() {
         * Initialize the page 
         */
         var init = function() {
-            cwheel = new ColorWheel(100);
-            cwheel.init();
+            colorwheel = new ColorWheel(100);
+            colorwheel.init();
 
             var canvas = document.getElementById('canvas'); 
             ctxt = canvas.getContext('2d');    
@@ -115,11 +115,11 @@ $(document).ready(function() {
             initBackgroundCanvas();
             $canvas.hide();
 
-            $('#wavedistortion').slider({max: 4, min: 0, slide: wavedistortionChange, step: 0.2});
+            $('#wavedistortion').slider({max: 4, min: 0, slide: waveDistortionChange, step: 0.2});
             $('#playbackspeed').slider({min: 0, max: 2, slide: playbackspeedChange, step: 0.1, value: 1});
 
              try {
-                 // Fix up for prefixing
+                 /* Fix up for prefixing */
                  window.AudioContext = window.AudioContext || window.webkitAudioContext;
                  audioContext = new AudioContext();
              } catch(e) {
@@ -149,8 +149,7 @@ $(document).ready(function() {
                 }
 
                 nextCircle.step(); 
-                drawCircle(context, nextCircle.x, nextCircle.y,
-                           nextCircle.r, nextCircle.color);
+                drawCircle(context, nextCircle, nextCircle.color);
             }
 
             var redraw = function () {
@@ -161,6 +160,15 @@ $(document).ready(function() {
                 requestAnimationFrame(redraw);
             }
         }
+
+       /**
+        * Helper for drawing circles
+        */
+        var Circle = function(x, y, r) {
+            this.x = x;
+            this.y = y;
+            this.r = r;
+        };
 
        /**
         * Helper for drawing floater background circles
@@ -207,6 +215,19 @@ $(document).ready(function() {
         };
 
        /**
+        * Helper for drawing filter circles
+        */
+        var FilterCircle = function(x, y, r) {
+            this.x = x;
+            this.y = y;
+            this.r = r;
+            this.containsPoint = function(px, py) {
+                return (Math.sqrt(Math.pow(px - this.x, 2) + 
+                        Math.pow(py - this.y, 2)) < this.r);
+            };
+        }
+
+       /**
         * Draw some random floating circles in the background of the welcome page
         */
         function initBackgroundCanvas() {
@@ -222,9 +243,9 @@ $(document).ready(function() {
                               getRGBAColorString([255, 0, 254], 0.37)];
             var floatingCircles = [];
 
-            // initialize some randomly floating circles with radius >=10 and radius < 50 
+            /* initialize some randomly floating circles with radius >=10 and radius < 50 */
             for (var i = 0; i < 15; i++) {
-                var r = 10 + Math.random() * 40;
+                var r = RADIUS_MIN + Math.random() * (RADIUS_MAX - RADIUS_MIN);
                 var color = backColors[(i % 3)]; 
 
                 floatingCircles.push(new BackgroundCircle(backWidth, backHeight, r, color));
@@ -259,90 +280,147 @@ $(document).ready(function() {
             return 'rgba(' + colorArray[0] + ',' + colorArray[1] + ',' 
                            + colorArray[2] + ',' + opacity + ')';
         }
+        
+       /**
+        * Calculate the position for a circle as a point on a spiral
+        */
+        function calculateSpiralCircle(r, interp, freq) {
+            var sx = 0.2 * freq * Math.cos(freq); 
+            var sy = 0.2 * freq * Math.sin(freq); 
+
+            var rev = 1024 - freq;
+            var rx =  0.3 * rev * Math.cos(rev);
+            var ry =  0.3 * rev * Math.sin(rev);
  
+            var x = (1 - interp) * sx + interp * rx;
+            var y = (1 - interp) * sy + interp * ry;
+
+            return new Circle(x, y, r);
+        }
+ 
+       /**
+        * Calculate the position for a circle as a point on a reverse spiral
+        * to epicycloid, depending on the interpolation and frequency
+        */
+        function calculateRevSpiralEpiCircle(r, interp, freq) {
+            var rev = 1024 - freq;
+            var rx =  0.3 * rev * Math.cos(rev);
+            var ry =  0.3 * rev * Math.sin(rev);
+ 
+            var a = freq/1024 * 200;
+            var b = a / 7;
+            var ex = (a + b) * Math.cos(freq) - b * Math.cos((a / b + 1) * freq); 
+            var ey = (a + b) * Math.sin(freq) - b * Math.sin((a / b + 1) * freq);
+ 
+            var i = interp - 1;
+            var x = (1 - i) * rx + i * ex;
+            var y = (1 - i) * ry + i * ey;
+
+            return new Circle(x, y, r);
+        }
+
+       /**
+        * Calculate the position for a circle as a point on an epicycloid
+        * to reverse epicycloid, depending on the interpolation and frequency
+        */
+        function calculateEpiRevEpiCircle(r, interp, freq) {
+            var rev = 1024 - freq;
+            var a = freq/1024 * 200;
+            var b = a / 7;
+            var ex = (a + b) * Math.cos(freq) - b * Math.cos((a / b + 1) * freq); 
+            var ey = (a + b) * Math.sin(freq) - b * Math.sin((a / b + 1) * freq);
+ 
+            var rex = (a + b) * Math.cos(rev) - b * Math.cos((a / b + 1) * rev); 
+            var rey = (a + b) * Math.sin(rev) - b * Math.sin((a / b + 1) * rev);
+ 
+            var i = interp - 2;
+            var x = (1 - i) * ex + i * rex;
+            var y = (1 - i) * ey + i * rey;
+
+            return new Circle(x, y, r);
+        }
+
+       /**
+        * Calculate the position for a circle as a point on a reverse epicycloid
+        * to hypocycloid, depending on the interpolation and frequency
+        */
+        function calculateRevEpiHypoCircle(r, interp, freq) {
+            var a = freq/1024 * 200;
+            var b = a / 7;
+            var rev = 1024 -freq;
+            var rex = (a + b) * Math.cos(rev) - b * Math.cos((a / b + 1) * rev); 
+            var rey = (a + b) * Math.sin(rev) - b * Math.sin((a / b + 1) * rev);
+ 
+            var c = 150;
+            var hx = (a - b) * Math.cos(freq) - c * Math.cos((a / b - 1) * freq);
+            var hy = (a - b) * Math.sin(freq) - c * Math.sin((a / b - 1) * freq);
+ 
+            var i = interp - 3;
+            var x = (1 - i) * rex + i * hx;
+            var y = (1 - i) * rey + i * hy;
+
+            return new Circle(x, y, r);
+        }
+
+       /**
+        * Draw a circle for each frequency represented in the current sound.
+        * The radius and color of the circle depend on the amplitude of the
+        * frequency and whether or not the amplitude has increased or decreased
+        * since the last sample. The position of the circle is calculated by one
+        * of four potential functions, depending on the value of the wave distortion
+        * slider.
+        */
         function drawSound(freqDomain, scale, opacity) {
             if (!paused) {
                 for (var freq = 0; freq < freqDomain.length; freq++) {
-                    var x, y, r;
                     var amp = freqDomain[freq];
  
-                    // interpolate between spiral and reverse spiral
-                    r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50 * scale; 
- 
-                    if (interp <= 1) {    
-                        var sx = 0.2 * freq * Math.cos(freq); 
-                        var sy = 0.2 * freq * Math.sin(freq); 
-                        
-                        var rev = 1024 - freq;
-                        var rx =  0.3 * rev * Math.cos(rev);
-                        var ry =  0.3 * rev * Math.sin(rev);
- 
-                        x = (1 - interp) * sx + interp * rx;
-                        y = (1 - interp) * sy + interp * ry;
-                    } else if (interp <= 2) { // rev spiral and epicycloid
-                        var rev = 1024 - freq;
-                        var rx =  0.3 * rev * Math.cos(rev);
-                        var ry =  0.3 * rev * Math.sin(rev);
- 
-                        var a = freq/1024 * 200;
-                        var b = a / 7;
-                        var ex = (a + b) * Math.cos(freq) - b * Math.cos((a / b + 1)*freq); 
-                        var ey = (a + b) * Math.sin(freq) - b * Math.sin((a / b + 1)*freq);
- 
-                        var i = interp - 1;
-                        x = (1 - i) * rx + i * ex;
-                        y = (1 - i) * ry + i * ey;
-                    } else if (interp <= 3) { // epicycloid and reverse epi
-                        var rev = 1024 - freq;
-                        var a = freq/1024 * 200;
-                        var b = a / 7;
-                        var ex = (a + b) * Math.cos(freq) - b * Math.cos((a / b + 1)*freq); 
-                        var ey = (a + b) * Math.sin(freq) - b * Math.sin((a / b + 1)*freq);
- 
-                        var rex = (a + b) * Math.cos(rev) - b * Math.cos((a / b + 1)*rev); 
-                        var rey = (a + b) * Math.sin(rev) - b * Math.sin((a / b + 1)*rev);
- 
-                        var i = interp - 2;
-                        x = (1 - i) * ex + i * rex;
-                        y = (1 - i) * ey + i * rey;
-                    } else { // rev epi and hyp
-                        var a = freq/1024 * 200;
-                        var b = a / 7;
-                        var rev = 1024 -freq;
-                        var rex = (a + b) * Math.cos(rev) - b * Math.cos((a / b + 1)*rev); 
-                        var rey = (a + b) * Math.sin(rev) - b * Math.sin((a / b + 1)*rev);
- 
-                        var c = 150;
-                        var hx = (a - b) * Math.cos(freq) - c * Math.cos((a / b - 1)*freq);
-                        var hy = (a - b) * Math.sin(freq) - c * Math.sin((a / b - 1)*freq);
- 
-                        var i = interp - 3;
-                        x = (1 - i) * rex + i * hx;
-                        y = (1 - i) * rey + i * hy;
-                    }
- 
-                    x = x * spacing * scale + WIDTH/2;
-                    y = y * spacing * scale + HEIGHT/2;
-                    
-                    var lastamp = lastAmps[freq];
-                    var delta = (lastamp - amp);
-                    
-                    // determine colors
-                    var colors = cwheel.getColors();
-                    var fill;
-                    var adjustedOpacity = r/30 * 0.9 * opacity;
-                    if (delta > 1) {
-                        fill = getRGBAColorString(colors[0], adjustedOpacity); 
-                    } else if (delta < -1) {
-                        fill = getRGBAColorString(colors[1], adjustedOpacity); 
+                    var r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * RADIUS_MAX * scale; 
+                    var circle;
+
+                    /* choose the drawing pattern based on the interpolation
+                     * value
+                     */
+                    if (interp <= 1) {
+                        circle = calculateSpiralCircle(r, interp, freq);
+                    } else if (interp <= 2) {
+                        circle = calculateRevSpiralEpiCircle(r, interp, freq);
+                    } else if (interp <= 3) {
+                        circle = calculateEpiRevEpiCircle(r, interp, freq);
                     } else {
-                        fill = getRGBAColorString(colors[2], adjustedOpacity); 
+                        circle = calculateRevEpiHypoCircle(r, interp, freq);
                     }
-                    drawCircle(ctxt, x, y, r, fill); 
+ 
+                    circle.x = circle.x * spacing * scale + WIDTH/2;
+                    circle.y = circle.y * spacing * scale + HEIGHT/2;
+                    
+                    /* calculate the change in amplitude from the last sample */
+                    var lastAmp = lastAmps[freq];
+                    var deltaAmplitude = (lastAmp - amp);
+                    
+                    /* determine colors */
+                    var colors = colorwheel.getColors();
+                    var adjustedOpacity = r/30 * 0.9 * opacity;
+                    var colorIndex;
+
+                    if (deltaAmplitude > 1) {
+                        colorIndex = 0;
+                    } else if (deltaAmplitude < -1) {
+                        colorIndex = 1;
+                    } else {
+                        colorIndex = 2;
+                    }
+                    var fill = getRGBAColorString(colors[colorIndex], adjustedOpacity); 
+                    drawCircle(ctxt, circle, fill); 
                 }
             }
         }
  
+
+       /**
+        * Get the frequency values of the current sound and draw the scene
+        * accordingly
+        */
         function drawAndAnalyzeSound() {
             requestAnimationFrame(drawAndAnalyzeSound);
             if (frame % 10 != 0) {
@@ -357,16 +435,20 @@ $(document).ready(function() {
         
             var freqDomain = new Float32Array(analyser.frequencyBinCount);
             analyser.getFloatFrequencyData(freqDomain);
+
             drawConvolver();
             drawSound(freqDomain, 1, 1);
-            drawLines();
+            drawPenLines();
             drawFilters();            
  
             lastAmps = freqDomain;
             frame++;
         }
  
-        function drawLines() {
+       /**
+        * Draw the lines created with the pen tool 
+        */
+        function drawPenLines() {
             ctxt.beginPath();
             ctxt.strokeStyle = '#000000';
             for (var i = 0; i < noiseLines.length; i++) {
@@ -382,9 +464,7 @@ $(document).ready(function() {
                 
                     ctxt.stroke();
                 }
- 
             }
- 
             ctxt.strokeStyle = '#FFFFFF';
         }
  
@@ -395,7 +475,7 @@ $(document).ready(function() {
             var fill = getRGBAColorString([255, 255, 255], 0.7);
             for (var i = 0; i < filterShapes.length; i++) {
                 filter = filterShapes[i];
-                drawCircle(ctxt, filter.x, filter.y, filter.r, fill);
+                drawCircle(ctxt, filter, fill);
             }
         }
  
@@ -403,7 +483,7 @@ $(document).ready(function() {
         * Play sound from a buffer at a given start time 
         */
         function playSound(buffer, starttime) {
-            // disconnect if there is already a song uploaded
+            /* disconnect if there is already a song uploaded */
             if (audioSource) {
                 audioSource.disconnect(0);
             }
@@ -412,7 +492,7 @@ $(document).ready(function() {
             audioContext.decodeAudioData(buffer, function(buffer_data) {
                 audioSource.buffer = buffer_data; 
  
-                // set up the AudioAnalserNode
+                /* set up the AudioAnalserNode */
                 analyser = audioContext.createAnalyser();
                 lastAmps = new Float32Array(analyser.frequencyBinCount);
                 audioSource.connect(analyser);
@@ -428,18 +508,6 @@ $(document).ready(function() {
             });
         }        
         
-        function allowDrop(ev) {
-            ev.preventDefault();
-        }
-        
-        function drop(ev) {
-            ev.preventDefault();
-            var data = ev.dataTransfer.files[0];    
-            if (data) {
-                loadSound(data);
-            }
-        }
- 
        /**
         * Draw the convolver representation lightly at 5x scale in the background
         */
@@ -460,15 +528,17 @@ $(document).ready(function() {
         function applyAudioEffects() {
             audioSource.disconnect(0);
             audioSource.playbackRate.value = 1 / spacing;
-            var source = audioSource; // save state
 
-            // apply the selected convolver
+            /* save the state */
+            var source = audioSource;
+
+            /* apply the selected convolver */
             if (currconvolve >=0) {
                 audioSource.connect(convolvers[currconvolve]);
                 convolvers[currconvolve].connect(audioContext.destination);
             }
                 
-            // apply filters
+            /* apply lowpass filters */
             for (var i = 0; i < filters.length; i++) {
                 var filter = filters[i];
                 audioSource.connect(filter);
@@ -477,7 +547,9 @@ $(document).ready(function() {
  
             analyser.connect(audioContext.destination);
             audioSource.connect(analyser);
-            audioSource = source; // restore state
+
+            /* restore state */
+            audioSource = source;
         }
  
        /**
@@ -497,8 +569,8 @@ $(document).ready(function() {
         */
         function getFrequencyForPos(x, y) {
             var freq;
-            var a = (x - WIDTH/2)/(0.2 * spacing); // freq * cos(freq)
-            var b = (y - HEIGHT/2)/(0.2 * spacing); // freq * sin(freq)
+            var a = (x - WIDTH/2)/(0.2 * spacing);
+            var b = (y - HEIGHT/2)/(0.2 * spacing);
             var f = Math.atan(b/a);
             
             if (a < 0 && Math.cos(f) > 0) {
@@ -509,9 +581,13 @@ $(document).ready(function() {
             return freq;
         }
  
-        function addFilter(newfilter) {
+       /**
+        * Initialize a new audio filter
+        */
+        function addFilterForShape(newfilter) {
             if (newfilter.r > 0) {    
                 var filter = audioContext.createBiquadFilter();
+
                 filter.type = filter.LOWPASS;
                 filter.frequency.value = getFrequencyForPos(newfilter.x, newfilter.y); 
                 filter.Q.value = 1 / newfilter.r;
@@ -524,7 +600,7 @@ $(document).ready(function() {
         * Update which convolver is applied based on the wave distortion slider value
         * and update the interp value, which is used in determining the drawing pattern
         */
-        function wavedistortionChange(event, ui) {
+        function waveDistortionChange(event, ui) {
             interp = ui.value;
             currconvolve = Math.floor(interp - 1);
             applyAudioEffects();
@@ -622,7 +698,7 @@ $(document).ready(function() {
         });
  
         $('#convolve').change(function(evt) {
-            convolver = audioContext.createConvolver();
+            var convolver = audioContext.createConvolver();
             var reader = new FileReader();
             var file = evt.target.files[0];
             reader.onload = function (e) {
@@ -718,27 +794,34 @@ $(document).ready(function() {
                     oscillator.start(0);
                 } else if (drawmode == DrawMode.FILTER){
                     drawingFilter = true;
-                    var filter = {r:0};
          
                     var offsetX = $(this).offset().left;
                     var offsetY = $(this).offset().top;
 
-                    filter.x = event.pageX - offsetX;
-                    filter.y = event.pageY - offsetY;    
+                    var filter = new FilterCircle(event.pageX - offsetX,
+                                                  event.pageY - offsetY, 0);
                     filterShapes.push(filter);
 
-                    if (mousedownID == -1) {
-                        mousedownID = setInterval(whilemousedown, 100);
+                    if (mousedownTimer == -1) {
+                        var whilemousedown = function() {
+                            var d = new Date();
+                            var deltaT = d.getTime() - clicktime;     
+                            var r = Math.max(0, deltaT/10);
+                            var newfilter = filterShapes[filterShapes.length -1];
+                            newfilter.r = r;
+                        };
+
+                        mousedownTimer = setInterval(whilemousedown, 100);
                     }
                 }
             });
 
             $canvas.mousemove(function (event) {
-                var offsetX = $(this).offset().left;
-                var offsetY = $(this).offset().top;
                 if (drawing && drawmode == DrawMode.PEN) {
                     var line = noiseLines[noiseLines.length - 1];
-                    
+                    var offsetX = $(this).offset().left;
+                    var offsetY = $(this).offset().top;
+
                     var px = event.pageX - offsetX;
                     var py = event.pageY - offsetY
                     var nextpt = {x: px, y:py};
@@ -755,25 +838,27 @@ $(document).ready(function() {
                 }
             });    
          
-            $canvas.mouseup(function (event) {
+            $canvas.mouseup(function(event) {
                 var dist = Math.sqrt(Math.pow(event.pageX - mousedownx, 2) + 
                            Math.pow(event.pageY - mousedowny, 2));
          
                 if (drawmode == DrawMode.FILTER) {
                     drawingFilter = false;
-                    // clear mousedown
-                    if (mousedownID != -1) {
-                        clearInterval(mousedownID);
-                        mousedownID = -1;
+
+                    /* clear mousedown timer */
+                    if (mousedownTimer != -1) {
+                        clearInterval(mousedownTimer);
+                        mousedownTimer = -1;
                     }
-                    // add a sound filter
+
+                    /* add a sound filter */
                     if (filterShapes.length > 0) {
                         var newfilter = filterShapes[filterShapes.length - 1];
                         if (newfilter.r < 1) {
                             filterShapes.splice(filterShapes.length - 1, 1);
                         }
          
-                        addFilter(newfilter);
+                        addFilterForShape(newfilter);
                     }
          
                     var d = new Date();
@@ -782,18 +867,15 @@ $(document).ready(function() {
                     if (deltaT < 100) {
                         var offsetX = $(this).offset().left;
                         var offsetY = $(this).offset().top;
+                        var x = event.pageX - offsetX;
+                        var y = event.pageY - offsetY;
          
-                        // check to see if we need to remove a filter
+                        /* check to see if we need to remove a filter */
                         for (var i = 0; i < filterShapes.length; i++) {
                             var nextfilter = filterShapes[i];
-                            var xc = nextfilter.x;
-                            var yc = nextfilter.y;
-                            var x = event.pageX - offsetX;
-                            var y = event.pageY - offsetY;
          
-                            if (Math.sqrt(Math.pow(xc - x, 2) + Math.pow(yc - y, 2)) 
-                                < nextfilter.r) {
-                                filterShapes.splice(i, 1); // remove this filter
+                            if (nextfilter.containsPoint(x, y)) {
+                                filterShapes.splice(i, 1);
                                 filters.splice(i, 1);
                                 applyAudioEffects();
                                 break;
@@ -805,19 +887,11 @@ $(document).ready(function() {
          
                     if (noiseLines.length > 0) {
                         var newline = noiseLines[noiseLines.length - 1];
-                        noiseLines.splice(noiseLines.length -1, 1);
+                        noiseLines.splice(noiseLines.length - 1, 1);
                         oscillator.stop();
                     }
                 }
             });
-        }
- 
-        function whilemousedown() {
-            var d = new Date();
-            var deltaT = d.getTime() - clicktime;     
-            var r = Math.max(0, deltaT/10);
-            var newfilter = filterShapes[filterShapes.length -1];
-            newfilter.r = r;
         }
  
 
