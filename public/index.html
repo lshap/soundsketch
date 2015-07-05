@@ -14,49 +14,54 @@
     <body>
         <div id="main">
             <div id="welcome-container">
-                <canvas id="backgroundcanvas"></canvas>
-                <span id="header">SOUND SKETCH</span> 
-                <img id="colorwheel" class="hidden" src="images/colorwheelsmall.png"></img>
-                <div id="dragDiv" class="row" ondragover="allowDrop(event)" ondrop="drop(event)">
+                <canvas id="background-canvas"></canvas>
+                <span class="header">SOUND SKETCH</span> 
+                <image id="colorwheel" class="hidden" src="images/colorwheelsmall.png"></image>
+                <div id="music-load-area" class="row">
                     <input id="filepicker" class="hidden" type="file" accept=".mp3"/>
-                    <img id="preloadimage" src="images/preload.png"></img>
-                    <span id="OR">OR</span>
-                    <img id="uploadimage" src="images/upload.png"></img>
+                    <image id="preload-button" src="images/preload.png"></image>
+                    <span class="sub-header">OR</span>
+                    <image id="upload-button" src="images/upload.png"></image>
                     <input type="text" class="hidden" id="urlInput"/>
                 </div>
             </div>
 
         <div id="scene-container">
             <canvas id="canvas"></canvas>
-            <div id="menucontainer" class = "container">
+            <div id="menu-container" class = "container">
                 <div id="menu" class="row">
                     <div class="col-xs-2 col-xs-offset-3">
                         <div class="row">
-                            <div id="wavedistortion" class="slider"></div>
+                            <div id="wave-distortion" class="slider"></div>
                         </div>
                         <div class="row">
-                            <div id="playbackspeed" class="slider">
+                            <div id="playback-speed" class="slider">
                         </div>
                     </div>
                 </div>
                 <div class="col-xs-2 buttons">
-                    <img id="pause" src = "images/pauseBtn.png"></image>
-                    <image id="penimage" src="images/pencilBtn.png"></image> 
-                    <image id="filterimage" src="images/filterBtn.png"></image>
+                    <image id="pause-button" class="menu-button" src ="images/pauseBtn.png"></image>
+                    <image id="pen-button" class="menu-button" src="images/pencilBtn.png"></image> 
+                    <image id="filter-button" class="menu-button" src="images/filterBtn.png"></image>
                 </div>
-                <canvas id="wheelcanvas"></canvas>
+                <canvas id="wheel-canvas"></canvas>
                 </div>
             </div>
         </div>
         <div id="overlay"></div>
-        <img src="images/info.png" id="info"></img>
-        <img src="images/home.png" id="home"></img>
-        <div id="information">
-            <span><span class="bold-text">Welcome to Sound Sketch!</span> Play with the sample sound or upload your own mp3 to begin an interactive
-              music experience. Your sound will provide the visual base for your
-              sketch, and by playing around with the visuals you will alter your sound! Learn more about this project <a href ="about.html">here</a>.
-            <br></br>
-            <span class="bold-text">Hint</span>: once the visualization appears, move your mouse to the bottom of the screen to view your controls.</span>
+        <image src="images/info.png" id="info-button" class="header-button"></image>
+        <image src="images/home.png" id="home-button" class="header-button"></image>
+        <div id="info-panel">
+            <div class="text">
+                <span><span class="bold-text">Welcome to Sound Sketch!</span>
+                Play with the sample sound or upload your own mp3 to begin an interactive
+                music experience. Your sound will provide the visual base for your
+                sketch, and by playing around with the visuals you will alter your sound!
+                Learn more about this project <a href ="about.html">here</a>.
+                <br></br>
+                <span class="bold-text">Hint</span>: once the visualization appears,
+                move your mouse to the bottom of the screen to view your controls.</span>
+            </div>
         </div>
     </div>
 </body>

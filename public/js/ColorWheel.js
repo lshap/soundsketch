@@ -1,5 +1,6 @@
-var ColorWheel = function(rad) {
+var ColorWheel = function(rad, divId) {
     this.rad = rad;
+    this.divId = divId;
 };
 
 ColorWheel.prototype = function() {
@@ -7,9 +8,9 @@ ColorWheel.prototype = function() {
         colors = [],
         startX = 5,
         startY = 5,
-        selectedmark = -1,
-        wheelcanvas,
-        wheelctxt,
+        selectedMark = -1,
+        wheelCanvas,
+        wheelCtxt,
         markerRad,
         width;
 
@@ -58,11 +59,11 @@ ColorWheel.prototype = function() {
     * Draw the background of the color wheel
     */
     var drawBackground = function() {
-        wheelctxt.clearRect(0, 0, width, width); 
-        wheelctxt.fillStyle = '#FFFFFF';
-        wheelctxt.arc(startX + width/2, startY + width/2, 5 + width/2, 0, Math.PI * 2);
-        wheelctxt.fill();
-        wheelctxt.drawImage(colorwheel,startX, startY, width, width);        
+        wheelCtxt.clearRect(0, 0, width, width); 
+        wheelCtxt.fillStyle = '#FFFFFF';
+        wheelCtxt.arc(startX + width/2, startY + width/2, 5 + width/2, 0, Math.PI * 2);
+        wheelCtxt.fill();
+        wheelCtxt.drawImage(colorwheel,startX, startY, width, width);        
     };
 
    /**
@@ -70,9 +71,9 @@ ColorWheel.prototype = function() {
     * that it hovers over 
     */
     var drawMarker = function(marker, selected, colorData) {
-        wheelctxt.beginPath();
-        wheelctxt.lineWidth = (selected) ? 5 : 3;
-        wheelctxt.strokeStyle = '#FFFFFF';
+        wheelCtxt.beginPath();
+        wheelCtxt.lineWidth = (selected) ? 5 : 3;
+        wheelCtxt.strokeStyle = '#FFFFFF';
 
         var px = marker.x;
         var py = marker.y;
@@ -80,8 +81,8 @@ ColorWheel.prototype = function() {
         var prel = relToCenter(px, py);
 
         // draw the marker background
-        wheelctxt.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        wheelctxt.beginPath();
+        wheelCtxt.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        wheelCtxt.beginPath();
 
         var r = getLength(prel.x, prel.y);
         var angle = Math.atan2(prel.y, prel.x);
@@ -93,21 +94,21 @@ ColorWheel.prototype = function() {
         var rightx = offsetX + r * Math.cos(angle + thet);
         var righty = offsetY + r * Math.sin(angle + thet);
             
-        wheelctxt.moveTo(offsetX, offsetY);
-        wheelctxt.lineTo(leftx, lefty);
-        wheelctxt.lineTo(rightx, righty);
-        wheelctxt.closePath();
-        wheelctxt.fill();
+        wheelCtxt.moveTo(offsetX, offsetY);
+        wheelCtxt.lineTo(leftx, lefty);
+        wheelCtxt.lineTo(rightx, righty);
+        wheelCtxt.closePath();
+        wheelCtxt.fill();
 
         // draw the marker based on the wheel color
         var rgbColor = 'rgba(' + colorData[0] + ',' + colorData[1] + ',' 
                                + colorData[2] + ',' + colorData[3] + ')'; 
 
-        wheelctxt.fillStyle = rgbColor;
-        wheelctxt.beginPath();
-        wheelctxt.arc(px, py, markerRad, 0, Math.PI * 2);   
-        wheelctxt.stroke();
-        wheelctxt.fill();
+        wheelCtxt.fillStyle = rgbColor;
+        wheelCtxt.beginPath();
+        wheelCtxt.arc(px, py, markerRad, 0, Math.PI * 2);   
+        wheelCtxt.stroke();
+        wheelCtxt.fill();
     };
 
    /**
@@ -117,9 +118,9 @@ ColorWheel.prototype = function() {
         drawBackground();
         for (var i = 0; i < markers.length; i++) {
             var marker = markers[i];
-            var imgData = wheelctxt.getImageData(marker.x, marker.y, 1, 1).data;
+            var imgData = wheelCtxt.getImageData(marker.x, marker.y, 1, 1).data;
             colors[i] = [imgData[0], imgData[1], imgData[2]];
-            drawMarker(marker, (selectedmark == i), imgData);
+            drawMarker(marker, (selectedMark == i), imgData);
         }
     };
 
@@ -135,13 +136,13 @@ ColorWheel.prototype = function() {
    /**
     * Initialize the canvas context to draw the wheel on
     */
-    var initContext = function() {
-        wheelcanvas = document.getElementById('wheelcanvas');
+    var initContext = function(className) {
+        wheelCanvas = document.getElementById(className);
         var widthPx = (this.width * 1.1) + 'px';
 
-        $('#wheelcanvas').attr('width', widthPx);
-        $('#wheelcanvas').attr('height', widthPx);
-        wheelctxt = wheelcanvas.getContext('2d');
+        $('.' + className).attr('width', widthPx);
+        $('.' + className).attr('height', widthPx);
+        wheelCtxt = wheelCanvas.getContext('2d');
     };
 
    /**
@@ -212,22 +213,23 @@ ColorWheel.prototype = function() {
    /**
     * Add mouse listeners to the color wheel
     */
-    var addMouseListeners = function() {
-        $('#wheelcanvas').mousedown(function(ev) {
+    var addMouseListeners = function(className) {
+        var $wheelCanvas = $('#' + className);
+        $wheelCanvas.mousedown(function(ev) {
             var x = ev.offsetX;
             var y = ev.offsetY;
-            selectedmark = markerIndex(x, y);
+            selectedMark = markerIndex(x, y);
         });
 
-        $('#wheelcanvas').mouseup(function(ev) {
-            selectedmark = -1;
+        $wheelCanvas.mouseup(function(ev) {
+            selectedMark = -1;
             draw();
         });
     
-        $('#wheelcanvas').mousemove(function(ev) {
-            if (selectedmark != -1) {
+        $wheelCanvas.mousemove(function(ev) {
+            if (selectedMark != -1) {
                 $(this).trigger('change');
-                var marker = markers[selectedmark];
+                var marker = markers[selectedMark];
  
                 var oldx = marker.x;
                 var oldy = marker.y;
@@ -236,7 +238,7 @@ ColorWheel.prototype = function() {
                 var y = ev.pageY - $(this).offset().top;
                 updateMarkerPosition(x, y, marker);
  
-                switch(selectedmark) {
+                switch(selectedMark) {
                     case -1:
                         return;
                     case 0:
@@ -276,12 +278,12 @@ ColorWheel.prototype = function() {
             colors[i] = nextcolor;
         }
 
-        initContext();
+        initContext(this.divId);
         $('#colorwheel').load(function() {
             draw();
         });
 
-        addMouseListeners();
+        addMouseListeners(this.divId);
     };
 
    /**

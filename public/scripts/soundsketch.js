@@ -101,7 +101,7 @@ $(document).ready(function() {
         * Initialize the page 
         */
         var init = function() {
-            colorwheel = new ColorWheel(100);
+            colorwheel = new ColorWheel(100, 'wheel-canvas');
             colorwheel.init();
 
             var canvas = document.getElementById('canvas'); 
@@ -115,8 +115,8 @@ $(document).ready(function() {
             initBackgroundCanvas();
             $canvas.hide();
 
-            $('#wavedistortion').slider({max: 4, min: 0, slide: waveDistortionChange, step: 0.2});
-            $('#playbackspeed').slider({min: 0, max: 2, slide: playbackspeedChange, step: 0.1, value: 1});
+            $('#wave-distortion').slider({max: 4, min: 0, slide: waveDistortionChange, step: 0.2});
+            $('#playback-speed').slider({min: 0, max: 2, slide: playbackspeedChange, step: 0.1, value: 1});
 
              try {
                  /* Fix up for prefixing */
@@ -231,9 +231,9 @@ $(document).ready(function() {
         * Draw some random floating circles in the background of the welcome page
         */
         function initBackgroundCanvas() {
-            var backCanvas = document.getElementById('backgroundcanvas');
-            $('#backgroundcanvas').attr('width', BACKGROUND_CANVAS_WIDTH + 'px');
-            $('#backgroundcanvas').attr('height', BACKGROUND_CANVAS_HEIGHT + 'px');
+            var backCanvas = document.getElementById('background-canvas');
+            $('#background-canvas').attr('width', BACKGROUND_CANVAS_WIDTH + 'px');
+            $('#background-canvas').attr('height', BACKGROUND_CANVAS_HEIGHT + 'px');
  
             var backWidth = 0.8 * BACKGROUND_CANVAS_WIDTH;
             var backHeight = 0.5 * BACKGROUND_CANVAS_HEIGHT;
@@ -502,7 +502,7 @@ $(document).ready(function() {
                 applyAudioEffects();
  
                 $('#welcome-container').hide();
-                $('#info').hide();
+                $('#info-button').hide();
                 $('#scene-container').show().children().show();
                 sceneDisplayed = true;
             });
@@ -619,13 +619,13 @@ $(document).ready(function() {
             applyAudioEffects();
         }
  
-        $('#menucontainer').mouseover(function (event){
+        $('#menu-container').mouseover(function (event){
             if (sceneDisplayed && !drawing && !drawingFilter) {
                 $('#menu').show();
             }    
         });
  
-        $('#menucontainer').mouseout(function (event) {
+        $('#menu-container').mouseout(function (event) {
             $('#menu').hide();
         });
  
@@ -633,21 +633,21 @@ $(document).ready(function() {
             applyAudioEffects();
         });
  
-        $('#uploadimage').click(function() {
+        $('#upload-button').click(function() {
             $('#filepicker').click();
         });
  
-        $('#uploadimage').mouseover(function() {
-            var im = document.getElementById('uploadimage');
+        $('#upload-button').mouseover(function() {
+            var im = document.getElementById('upload-button');
             im.src='images/upload_hover.png';
         });
  
-        $('#uploadimage').mouseout(function() {
-            var im = document.getElementById('uploadimage');
+        $('#upload-button').mouseout(function() {
+            var im = document.getElementById('upload-button');
             im.src='images/upload.png';
         });
  
-        $('#preloadimage').click(function() {
+        $('#preload-button').click(function() {
             var request = new XMLHttpRequest();
             request.open('GET', 'music/suchgreatheights.mp3', true);
             request.responseType = 'arraybuffer';
@@ -660,39 +660,39 @@ $(document).ready(function() {
             request.send();
         });
  
-        $('#preloadimage').mouseover(function() {
-            var im = document.getElementById('preloadimage');
+        $('#preload-button').mouseover(function() {
+            var im = document.getElementById('preload-button');
             im.src='images/preload-selected.png';
         });
  
-        $('#preloadimage').mouseout(function() {
-            var im = document.getElementById('preloadimage');
+        $('#preload-button').mouseout(function() {
+            var im = document.getElementById('preload-button');
             im.src='images/preload.png';
         });
  
-        $('#info').mouseover(function(){
-            var im = document.getElementById('info');
+        $('#info-button').mouseover(function(){
+            var im = document.getElementById('info-button');
             im.src = 'images/info_hover.png';
         });
  
-        $('#info').mouseout(function(){
+        $('#info-button').mouseout(function(){
             if ($('#overlay').is(':visible') == false) {
-                var im = document.getElementById('info');
+                var im = document.getElementById('info-button');
                 im.src = 'images/info.png';
             }
         });
  
-        $('#info').click(function() {
+        $('#info-button').click(function() {
             if ($('#overlay').is(':visible')) {
-                $('#information').effect('drop',{direction:'right'}, 400);
+                $('#info-panel').effect('drop',{direction:'right'}, 400);
                 $('#overlay').effect('fade');
-                var im = document.getElementById('info');
+                var im = document.getElementById('info-button');
                 im.src = 'images/info.png';
             }
             else {
                 $('#overlay').show();
-                $('#information').effect('slide',{direction:'right'},400);
-                var im = document.getElementById('info');
+                $('#info-panel').effect('slide',{direction:'right'},400);
+                var im = document.getElementById('info-button');
                 im.src = 'images/info_hover.png';
             }
         });
@@ -715,23 +715,23 @@ $(document).ready(function() {
             loadSound(file);    
         });
  
-        $('#pause').click(function(){
+        $('#pause-button').click(function(){
             if (paused) {
                 playSound(soundbuffer, pausetime);
                 paused = false;
                 this.src = 'images/pauseBtn.png';
-                $('#home').hide();
+                $('#home-button').hide();
             }
             else {
                 audioSource.stop();    
                 paused = true;
                 pausetime = audioContext.currentTime;
                 this.src = 'images/pauseBtn_selected.png';
-                $('#home').show();
+                $('#home-button').show();
             }
         });
  
-        $('#penimage').click(function(){
+        $('#pen-button').click(function(){
             switch(drawmode){
                 case DrawMode.PEN:
                     this.src = 'images/pencilBtn.png'
@@ -742,7 +742,7 @@ $(document).ready(function() {
                     drawmode = DrawMode.PEN;
                 break;
                 case DrawMode.FILTER:
-                    var $filt = $('#filterimage');
+                    var $filt = $('#filter-button');
                     $filt.attr('src', 'images/filterBtn.png');
  
                     this.src = 'images/pencilBtn_selected.png'
@@ -751,7 +751,7 @@ $(document).ready(function() {
             }
         });
  
-        $('#filterimage').click(function(){
+        $('#filter-button').click(function(){
             switch(drawmode){
                 case DrawMode.FILTER:
                     this.src = 'images/filterBtn.png'
@@ -762,7 +762,7 @@ $(document).ready(function() {
                     drawmode = DrawMode.FILTER;
                 break;
                 case DrawMode.PEN:
-                    var pen = $($('#penimage'))[0];
+                    var pen = $($('#pen-button'))[0];
                     pen.src = 'images/pencilBtn.png';
                     this.src = 'images/filterBtn_selected.png'
                     drawmode = DrawMode.FILTER;
@@ -770,7 +770,7 @@ $(document).ready(function() {
             }
         });
  
-        $('#home').click(function() {
+        $('#home-button').click(function() {
             window.location.reload();
         });
  
@@ -893,11 +893,6 @@ $(document).ready(function() {
                 }
             });
         }
- 
-
-        $('#backBtn').click(function() {
-            window.location.reload();
-        });
 
         return {init: init};
     }();

@@ -1,0 +1,33 @@
+<html>
+	<head>
+		<link rel='stylesheet' href='//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css'>
+		<link rel="stylesheet" type="text/css" href="about.css"/>
+	</head>
+	<body>
+		<div class = "container">
+			<a href="index.html"><img src="images/home.png" id="home"></img></a>
+		<div class="row">
+			<div class="col-md-4 col-md-offset-4">
+				<h1>About SoundSketch</h1>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-4 col-md-offset-4">
+				<h3>Initial Visualization</h3>
+				<span>The initial visualization is based off of the frequency samples of the audio source. Each circle represents a frequency value, from 1 - 1023 Hz. The radius of each circle is proportional to the amplitude that the frequency represented by that circle has at a given sample time. The colors of the circles shift based off of whether the amplitude of the represented frequency has increased or decreased between the previous sample and the current sample. At the start of the visualization, the position of each circle is given by computing the x and y positions on a parametric spiral based off of the frequency parameter, with lower frequencies at the center of the spiral and higher frequency values towards the edges. The initial colors are randomly assigned.<span>
+				<h3>Convolver Slider</h3>
+				<span>The first slider on the control panel convolves the current audio with one of four preloaded impulse wave responses for reverberation effects. Although the audio transitions discretely between these four convolved states, the visuals transition continuously between four parametric curves, which are repeated at a larger scale behind the initial frequency circles.</span>
+				<h3>Playback Slider</h3>
+				<span>The second slider on the control panel adjusts the playback speed of the audio source. Sliding to the right decreases the playback speed, while sliding to the left increases the playback speed. On the visual side, the parametric curve is altered with a scale adjustment: slower playback speeds are accompanied by a larger scale, and vice versa for faster playback speeds.</span>
+				<h3>Pencil Tool</h3>
+				<span>The pencil tool creates a new audio source with a frequency dependent on the position of drawing. The source is a sine oscillator with a frequency provided by the inverse of the parametric function used to position the frequency circles at the start of the visualization.</span>
+				<h3>Filter Tool</h3>
+				<span>The filter tool adds a lowpass filter to the audio source, with a frequency based off of the position of the center of the filter circle and a quality factor proportional to the radius of the filter circle. A lowpass filter filters out all frequencies below a specified frequency.</span>
+				<h3>Color Wheel</h3>
+				<span>The color wheel doesn't change the sound quality in any way, but you have to admit it looks pretty slick.</span>
+			</div>
+		</div>
+		<p></p>
+		</div>
+	</body>
+</html>

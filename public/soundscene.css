@@ -11,31 +11,24 @@ body {
     top: 0;
 }
 
-#backgroundcanvas {
+#background-canvas {
 	position:fixed;
 	top:100px;
 	margin-left:25%;
 }
 
-#dragDiv {
+#music-load-area {
 	position:relative;
 	margin-left:42.5%;
 	margin-right:42.5%;
-	margin-top:400px;
+	margin-top:450px;
 	width:500px;
 	height:220px;
 	padding: 10px;
 	background-color: #FFFFFF;
 }
 
-#OR {
-	font-family: "News Gothic MT", "Helvetica Neue" Arial, sans-serif;
-	font-size: 30px;
-	color: #FFC9FE;
-	font-weight: bold;
-}
-
-#header {
+.header {
 	font-family: "News Gothic MT", "Helvetica Neue", Arial, sans-serif;
 	font-size: 90px;
 	font-weight: 500;
@@ -47,8 +40,16 @@ body {
 	min-width: 100%;
 }
 
-#overlay{
-	background-color:rgba(255, 255, 255, 0.7);
+.sub-header {
+	font-family: "News Gothic MT", "Helvetica Neue" Arial, sans-serif;
+	font-size: 30px;
+	color: #FFC9FE;
+	font-weight: bold;
+}
+
+#overlay {
+	background-color: #FFFFFF;
+    opacity: 0.7;
 	position: fixed;
 	top: 0px;
 	left: 0px;
@@ -57,22 +58,26 @@ body {
     display: none;
 }
 
-#information {
+#info-panel {
 	font-weight: normal;
 	font-size: 16px;
-	color: #6B6B6B;
 	padding: 12px 12px 12px 12px;
-	background-color: rgba(127, 241, 227, 0.4);
+    background-color: #CBF9F3;
+	color: #6B6B6B;
 	border-radius: 10px;
 	position: fixed;
 	width: 296px;
 	height: 290px;	
 	min-width: 296px;
-	min-height: 290px;	
+    min-height: 290px;	
 	top: 50px;
-	left: 70%;
+    right: 1%;
 	margin-right: 70px;
     display: none;
+}
+
+#info-panel.text {
+    opacity: 1;
 }
 
 #canvas {
@@ -83,7 +88,7 @@ body {
 	width: 100%;
 }
 
-#menucontainer {
+#menu-container {
 	position: fixed;
 	bottom: 0px;
 	left: 0px;
@@ -97,19 +102,13 @@ body {
 	background-color: rgba(230, 230, 230, 0.5);	
 }
 
-#preloadimage {
+#preload-button {
 	width: 60px;
 	height: 60px;
 	margin-right: 35px;
 }
 
-#linkimage {
-	width: 50px;
-	height: 50px;
-	margin-right: 35px;
-}
-
-#uploadimage {
+#upload-button {
  	width: 60px;
 	height: 60px;
 	margin-left: 35px;
@@ -123,34 +122,17 @@ body {
 	padding-right: 0px;
 }
 
-#pause {
+.menu-button {
 	margin-top: 50px;
-	width: 45px;
-	height: 45px;
-}
-#penimage {
-	margin-top:50px;
-	width:45px;
-	height:45px;
-	margin-left:10px;
-}
-
-#filterimage {
-	margin-top: 50px;
-	width: 45px;
 	margin-left: 10px;
+	width: 45px;
 	height: 45px;
 }
 
-#wheelcanvas {
+#wheel-canvas {
 	margin-top: 25px;
 	margin-left: 0px;
     z-index: 100;
-}
-
-.color {
-	position: relative;
-	margin-top: 10px;
 }
 
 .slider {
@@ -159,54 +141,31 @@ body {
 	width: 150px;
 }
 
-#wavedistoriton {
+#wave-distoriton {
 	padding-top: 100px;
 }
 
-#backBtn {
-	margin-top: 100px;
-}
-
-#playIm {
-	margin-top: 50px;
-	margin-left: 15px;
-}
-
-#info {
+.header-button {
 	position: fixed;
 	top: 20px;
-	left: 95%;
 	width: 40px;
 	height: 40px;
 }
 
-#home {
-	position: fixed;
-	top: 20px;
-	left: 5%;
-	width: 40px;
-	height: 40px;
+#info-button {
+    right: 3%;
+}
+
+#home-button {
+	left: 3%;
     display: none;
-}
-
-.tiny {
-	width:40px;
 }
 
 .bold-text {
     font-weight: bold;
 }
 
-.ui-slider-handle {
-    border: none;
-}
-
 .hidden {
     display: none;
-}
-
-#backgroundcanvas {
-    width: 800px;
-    height: 600px;
 }
 
