@@ -64,7 +64,7 @@ $(document).ready(function() {
             HEIGHT = window.innerHeight * 0.95;
             $canvas.attr('width', WIDTH);
             $canvas.attr('height', HEIGHT);
-        }
+        };
 
        /**
         * Load a convolver audio node with mp3 from the given url 
@@ -225,7 +225,7 @@ $(document).ready(function() {
                 return (Math.sqrt(Math.pow(px - this.x, 2) + 
                         Math.pow(py - this.y, 2)) < this.r);
             };
-        }
+        };
 
        /**
         * Draw some random floating circles in the background of the welcome page
@@ -261,7 +261,7 @@ $(document).ready(function() {
             reader.onload = function(e) {
                 soundbuffer = e.target.result;
                 playSound(soundbuffer, 0);
-            }                
+            };                
             
             reader.readAsArrayBuffer(file);
         }
@@ -277,8 +277,8 @@ $(document).ready(function() {
         * Return a string in the form of 'rgba(r, g, b, a)' for the given color
         */
         function getRGBAColorString(colorArray, opacity) {
-            return 'rgba(' + colorArray[0] + ',' + colorArray[1] + ',' 
-                           + colorArray[2] + ',' + opacity + ')';
+            return 'rgba(' + colorArray[0] + ',' + colorArray[1] +
+                         ',' + colorArray[2] + ',' + opacity + ')';
         }
         
        /**
@@ -423,12 +423,12 @@ $(document).ready(function() {
         */
         function drawAndAnalyzeSound() {
             requestAnimationFrame(drawAndAnalyzeSound);
-            if (frame % 10 != 0) {
+            if (frame % 10 !== 0) {
                 frame ++;
                 return;
             }
  
-            if (frame % framespeed != 0) {
+            if (frame % framespeed !== 0) {
                 frame++;
                 return;
             }
@@ -676,7 +676,7 @@ $(document).ready(function() {
         });
  
         $('#info-button').mouseout(function(){
-            if ($('#overlay').is(':visible') == false) {
+            if ($('#overlay').is(':visible') === false) {
                 var im = document.getElementById('info-button');
                 im.src = 'images/info.png';
             }
@@ -691,7 +691,7 @@ $(document).ready(function() {
             }
             else {
                 $('#overlay').show();
-                $('#info-panel').effect('slide',{direction:'right'},400);
+                $('#info-panel').effect('slide',{direction:'right'}, 400);
                 var im = document.getElementById('info-button');
                 im.src = 'images/info_hover.png';
             }
@@ -706,7 +706,7 @@ $(document).ready(function() {
                     convolver.buffer = buffer;
                     applyAudioEffects();
                 });
-            }
+            };
             reader.readAsArrayBuffer(file);
         });
  
@@ -734,38 +734,40 @@ $(document).ready(function() {
         $('#pen-button').click(function(){
             switch(drawmode){
                 case DrawMode.PEN:
-                    this.src = 'images/pencilBtn.png'
+                    this.src = 'images/pencilBtn.png';
                     drawmode = DrawMode.NONE;
-                break;
+                    break;
                 case DrawMode.NONE:
-                    this.src = 'images/pencilBtn_selected.png'
+                    this.src = 'images/pencilBtn_selected.png';
                     drawmode = DrawMode.PEN;
-                break;
+                    break;
                 case DrawMode.FILTER:
                     var $filt = $('#filter-button');
                     $filt.attr('src', 'images/filterBtn.png');
  
-                    this.src = 'images/pencilBtn_selected.png'
+                    this.src = 'images/pencilBtn_selected.png';
                     drawmode = DrawMode.PEN;
+                    break;
                 default:
             }
         });
  
         $('#filter-button').click(function(){
-            switch(drawmode){
+            switch(drawmode) {
                 case DrawMode.FILTER:
-                    this.src = 'images/filterBtn.png'
+                    this.src = 'images/filterBtn.png';
                     drawmode = DrawMode.NONE;
-                break;
+                    break;
                 case DrawMode.NONE:
-                    this.src = 'images/filterBtn_selected.png'
+                    this.src = 'images/filterBtn_selected.png';
                     drawmode = DrawMode.FILTER;
-                break;
+                    break;
                 case DrawMode.PEN:
                     var pen = $($('#pen-button'))[0];
                     pen.src = 'images/pencilBtn.png';
-                    this.src = 'images/filterBtn_selected.png'
+                    this.src = 'images/filterBtn_selected.png';
                     drawmode = DrawMode.FILTER;
+                    break;
                 default:
             }
         });
@@ -823,7 +825,7 @@ $(document).ready(function() {
                     var offsetY = $(this).offset().top;
 
                     var px = event.pageX - offsetX;
-                    var py = event.pageY - offsetY
+                    var py = event.pageY - offsetY;
                     var nextpt = {x: px, y:py};
                     line.push(nextpt);
                     oscillator.frequency.value = getFrequencyForPos(px, py);
